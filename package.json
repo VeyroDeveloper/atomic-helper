@@ -1,0 +1,10 @@
+{
+  "name": "atomic-helper",
+  "productName": "Atomic Helper",
+  "version": "0.3.0",
+  "description": "Friendly one-click maintenance, setup and security for Fedora Atomic desktops",
+  "main": "main.js",
+  "license": "MIT",
+  "author": "VeyroDeveloper",
+  "private": true
+}

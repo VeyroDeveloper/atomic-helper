@@ -1,0 +1,12 @@
+# build output
+.build/
+*.AppImage
+
+# node
+node_modules/
+
+# editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store

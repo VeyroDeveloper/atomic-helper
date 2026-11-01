@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atomic Helper</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-logo" id="brand-logo"></span><span>Atomic Helper</span></div>
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-view="home" role="tab">Home</button>
+        <button class="tab" data-view="setup" role="tab">Post-install</button>
+        <button class="tab" data-view="security" role="tab">Security</button>
+        <button class="tab" data-view="packages" role="tab">Apps &amp; packages</button>
+        <button class="tab" data-view="help" role="tab">Help</button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- HOME -->
+      <section id="view-home" class="view active">
+        <div id="banner-update" class="banner info hidden">
+          <span class="banner-icon" id="banner-update-icon"></span>
+          <div class="banner-text">
+            <strong id="banner-update-title">Update available</strong>
+            <span id="banner-update-sub"></span>
+          </div>
+          <button class="btn" id="btn-update-later">Later</button>
+          <button class="btn primary" id="btn-update-app">Update app</button>
+        </div>
+
+        <div id="banner-restart" class="banner hidden">
+          <span class="banner-icon" id="banner-icon"></span>
+          <div class="banner-text">
+            <strong>Restart to finish</strong>
+            <span id="banner-sub">Your changes are ready and start after a restart.</span>
+          </div>
+          <button class="btn primary" id="btn-banner-restart">Restart now</button>
+        </div>
+
+        <div class="card hero">
+          <div class="hero-icon" id="hero-icon"></div>
+          <div class="hero-text">
+            <h1 id="hero-title">Getting ready…</h1>
+            <p id="hero-sub">Reading your system information.</p>
+            <p class="meta" id="hero-meta"></p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn primary big" data-action="update-all" id="btn-update-all"></button>
+            <button class="btn" data-action="check" id="btn-check"></button>
+          </div>
+        </div>
+
+        <div class="row-cards">
+          <div class="card mini">
+            <span class="mini-icon" id="mini-sys-icon"></span>
+            <div>
+              <div class="mini-title">System</div>
+              <div class="mini-main" id="mini-sys-main">–</div>
+              <div class="mini-sub" id="mini-sys-sub"></div>
+            </div>
+          </div>
+          <div class="card mini">
+            <span class="mini-icon" id="mini-disk-icon"></span>
+            <div class="mini-grow">
+              <div class="mini-title">Storage</div>
+              <div class="mini-main" id="mini-disk-main">–</div>
+              <div class="meter"><div class="meter-fill" id="meter-fill"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <h2>Quick actions</h2>
+        <div class="grid" id="tiles"></div>
+      </section>
+
+      <!-- POST-INSTALL -->
+      <section id="view-setup" class="view">
+        <div class="card hero">
+          <div class="hero-icon" id="setup-hero-icon"></div>
+          <div class="hero-text">
+            <h1 id="setup-title">Post-install setup</h1>
+            <p id="setup-sub">The usual first steps after installing Fedora Atomic, in one click.</p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn primary big" id="btn-setup-all"></button>
+          </div>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Recommended steps</h2>
+          <ul class="checks" id="setup-list"></ul>
+        </div>
+      </section>
+
+      <!-- SECURITY -->
+      <section id="view-security" class="view">
+        <div class="card">
+          <h2 class="card-title">Protection</h2>
+          <ul class="checks" id="security-list"></ul>
+        </div>
+        <div class="card">
+          <h2 class="card-title">DNS server</h2>
+          <p class="muted" id="dns-note">DNS turns website names into addresses. Pick a provider you trust, or keep the one from your network.</p>
+          <div class="grid" id="dns-tiles"></div>
+          <form id="dns-form" class="inline-form" autocomplete="off">
+            <input id="dns-input" type="text" placeholder="Custom servers, e.g. 1.1.1.1, 9.9.9.9" spellcheck="false" aria-label="Custom DNS servers">
+            <button class="btn" type="submit">Use custom</button>
+          </form>
+          <p class="form-error hidden" id="dns-error"></p>
+        </div>
+      </section>
+
+      <!-- PACKAGES -->
+      <section id="view-packages" class="view">
+        <div class="card">
+          <h2 class="card-title">System packages</h2>
+          <p class="muted">Atomic keeps the base system read-only. Packages you add here are layered on top of it and need a restart. For most apps, Flatpak (below) is the better choice.</p>
+          <form id="pkg-form" class="inline-form" autocomplete="off">
+            <input id="pkg-input" type="text" placeholder="Package name, e.g. htop" spellcheck="false" aria-label="Package name">
+            <button class="btn primary" type="submit" id="btn-pkg-add"></button>
+          </form>
+          <p class="form-error hidden" id="pkg-error"></p>
+          <ul class="list" id="pkg-list"></ul>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Apps (Flatpak)</h2>
+          <p class="muted" id="flatpak-note">Apps installed from Flathub or Fedora Flatpaks.</p>
+          <ul class="list" id="flatpak-list"></ul>
+        </div>
+      </section>
+
+      <!-- HELP -->
+      <section id="view-help" class="view">
+        <div class="card faq">
+          <details open>
+            <summary>What does "Atomic" mean?</summary>
+            <p>The core of your system is one tested image that is updated as a whole, so it can't end up half-updated. Your files, settings and apps live separately and are never touched by system updates.</p>
+          </details>
+          <details>
+            <summary>Why do I have to restart?</summary>
+            <p>An update is downloaded and prepared next to your running system. Nothing changes until you restart, and then you boot into the new version. You decide when.</p>
+          </details>
+          <details>
+            <summary>Something broke after an update. What now?</summary>
+            <p>Use <strong>Roll back</strong> on the Home screen, then restart. You can also pick the previous version in the boot menu when your computer starts.</p>
+          </details>
+          <details>
+            <summary>Where should I install apps from?</summary>
+            <p>Prefer Flatpak apps (Software or Flathub). They stay separate from the system and update independently. Use system packages only for things that must be part of the system itself.</p>
+          </details>
+          <details>
+            <summary>Where do I put development tools?</summary>
+            <p>Use a Toolbx or Distrobox container: a normal Fedora environment where you can install compilers and tools freely without touching the system. Open a terminal and run <code>toolbox create</code>, then <code>toolbox enter</code>.</p>
+          </details>
+          <details>
+            <summary>What does the Post-install tab do?</summary>
+            <p>It applies the usual first steps people look up after installing Fedora Atomic: Flathub, RPM Fusion, multimedia codecs and automatic updates. Steps that change the system itself need a restart, and the codecs can only be added once RPM Fusion is active.</p>
+          </details>
+          <details>
+            <summary>Why am I asked for my password?</summary>
+            <p>Changing the system is a privileged operation. Your desktop shows a normal password prompt; Atomic Helper never sees or stores your password.</p>
+          </details>
+        </div>
+        <div class="card">
+          <h2 class="card-title">About</h2>
+          <p class="muted" id="about-version"></p>
+          <p class="muted" id="about-update"></p>
+          <button class="btn" id="btn-check-app-update">Check for app updates</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ACTIVITY SHEET -->
+  <div id="sheet" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet-card">
+      <div class="sheet-head">
+        <div id="sheet-icon" class="sheet-icon spin"></div>
+        <div class="sheet-text">
+          <h3 id="sheet-title">Working…</h3>
+          <p id="sheet-sub"></p>
+        </div>
+      </div>
+      <div class="progress"><div class="bar indeterminate" id="sheet-bar"></div></div>
+      <button class="link" id="btn-toggle-log">Show details</button>
+      <pre class="log hidden" id="log"></pre>
+      <div class="sheet-actions">
+        <button class="btn" id="btn-cancel">Cancel</button>
+        <button class="btn hidden" id="btn-sheet-restart">Restart now</button>
+        <button class="btn primary hidden" id="btn-close">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM DIALOG -->
+  <div id="dialog" class="overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title">
+    <div class="dialog-card">
+      <h3 id="dialog-title"></h3>
+      <p id="dialog-body"></p>
+      <div class="sheet-actions">
+        <button class="btn" id="dialog-cancel">Cancel</button>
+        <button class="btn primary" id="dialog-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
