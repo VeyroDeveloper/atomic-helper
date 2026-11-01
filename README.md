@@ -44,9 +44,9 @@ your system. That fits Atomic distros well, because the base system stays untouc
 
 ### 1. Get the AppImage
 
-Either download a ready-made `AtomicHelper-x86_64.AppImage` from the
-[Releases](https://github.com/VeyroDeveloper/atomic-helper/releases) page (once one is published),
-or build it yourself, see [Build](#build) below.
+Download `AtomicHelper-x86_64.AppImage` from the
+[latest release](https://github.com/VeyroDeveloper/atomic-helper/releases/latest).
+If you prefer, you can also build it yourself, see [Build](#build) below.
 
 ### 2. Make it executable
 
