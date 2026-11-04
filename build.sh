@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds Atomic Helper into a single AppImage.
-# Needs: curl and python3 (or unzip). Run it from any folder: ./build.sh
+# Needs: curl, cargo, and either unzip or Python 3.
 set -euo pipefail
 
 ELECTRON_VERSION="42.0.0"
@@ -10,13 +10,19 @@ SRC="$PWD"
 WORK="$SRC/.build"
 
 case "$(uname -m)" in
-  x86_64)  ARCH=x86_64;  EL_ARCH=x64 ;;
+  x86_64)  ARCH=x86_64; EL_ARCH=x64 ;;
   aarch64) ARCH=aarch64; EL_ARCH=arm64 ;;
   *) echo "Unsupported CPU: $(uname -m)"; exit 1 ;;
 esac
 
 command -v curl >/dev/null || { echo "curl is required"; exit 1; }
+command -v cargo >/dev/null || { echo "Rust and Cargo are required to build the Firejail sandbox backend"; exit 1; }
 mkdir -p "$WORK"
+
+echo "==> Building the Rust Firejail backend"
+cargo build --release --locked --manifest-path "$SRC/rust/firejail/Cargo.toml"
+RUST_BACKEND="$SRC/rust/firejail/target/release/atomic-helper-firejail"
+[ -x "$RUST_BACKEND" ] || { echo "Rust backend build did not produce $RUST_BACKEND"; exit 1; }
 
 echo "==> Downloading Electron $ELECTRON_VERSION (about 115 MB, once)"
 EL_ZIP="$WORK/electron-$ELECTRON_VERSION-$EL_ARCH.zip"
@@ -44,10 +50,10 @@ mv "$LIB/electron" "$LIB/atomic-helper"
 rm -f "$LIB/chrome-sandbox" "$LIB/resources/default_app.asar"
 find "$LIB/locales" -name '*.pak' ! -name 'en-US.pak' ! -name 'de.pak' -delete
 
-mkdir -p "$LIB/resources/app"
-cp "$SRC"/{package.json,main.js,preload.js,index.html,style.css,renderer.js,diagnostics.js,icon.png,icon.svg} "$LIB/resources/app/"
-# Load the optional About/report and update-notice enhancements in the packaged app.
-sed -i 's#</body>#<script src="diagnostics.js"></script></body>#' "$LIB/resources/app/index.html"
+mkdir -p "$LIB/resources/app/bin"
+cp "$SRC"/{package.json,bootstrap.js,main.js,preload.js,index.html,style.css,renderer.js,diagnostics.js,firejail-ui.js,icon.png,icon.svg} "$LIB/resources/app/"
+install -m 755 "$RUST_BACKEND" "$LIB/resources/app/bin/atomic-helper-firejail"
+sed -i 's#</body>#<script src="diagnostics.js"></script><script src="firejail-ui.js"></script></body>#' "$LIB/resources/app/index.html"
 
 cat > "$APPDIR/AppRun" <<'EOF'
 #!/bin/sh
@@ -66,14 +72,13 @@ Exec=AppRun
 Icon=atomic-helper
 Terminal=false
 Categories=System;Settings;
-Keywords=update;upgrade;rpm-ostree;flatpak;atomic;silverblue;kinoite;
+Keywords=update;upgrade;rpm-ostree;flatpak;atomic;silverblue;kinoite;firejail;sandbox;
 StartupWMClass=atomic-helper
 EOF
 cp "$SRC/icon.png" "$APPDIR/atomic-helper.png"
 ln -sf atomic-helper.png "$APPDIR/.DirIcon"
 
 echo "==> Packing the AppImage"
-# Extracting the tool first means this works even without FUSE.
 rm -rf "$WORK/tool" "$WORK/squashfs-root"
 (cd "$WORK" && "$TOOL" --appimage-extract >/dev/null && mv squashfs-root tool)
 OUT="$SRC/AtomicHelper-$ARCH.AppImage"

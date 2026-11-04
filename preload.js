@@ -21,4 +21,11 @@ contextBridge.exposeInMainWorld('api', {
   onStart: listen('start'),
   onStep: listen('step'),
   onLog: listen('log'),
+  firejail: {
+    pick: () => ipcRenderer.invoke('firejail:pick'),
+    status: () => ipcRenderer.invoke('firejail:status'),
+    analyze: (file) => ipcRenderer.invoke('firejail:analyze', file),
+    preview: (file, options) => ipcRenderer.invoke('firejail:preview', file, options),
+    launch: (file, options) => ipcRenderer.invoke('firejail:launch', file, options),
+  },
 });

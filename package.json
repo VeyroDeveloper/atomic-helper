@@ -3,7 +3,7 @@
   "productName": "Atomic Helper",
   "version": "0.3.5",
   "description": "Friendly one-click maintenance, setup and security for Fedora Atomic desktops",
-  "main": "main.js",
+  "main": "bootstrap.js",
   "license": "MIT",
   "author": "VeyroDeveloper",
   "private": true

@@ -2,6 +2,10 @@
 .build/
 *.AppImage
 
+# Rust build output
+rust/firejail/target/
+rust/firejail/Cargo.lock
+
 # node
 node_modules/
 
