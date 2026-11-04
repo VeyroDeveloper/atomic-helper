@@ -5,177 +5,97 @@
 </p>
 
 <p align="center">
-  <strong>Friendly one-click maintenance, setup, and security for Fedora Atomic desktops.</strong>
+  <strong>Friendly maintenance, setup, and security for Fedora Atomic desktops.</strong>
 </p>
 
-Atomic Helper is a lightweight desktop app for Fedora Silverblue, Kinoite, and other rpm-ostree-based systems. It brings the most common maintenance tasks into a clean, guided interface so you can keep your system healthy without digging through documentation or terminal commands.
+Atomic Helper is a desktop utility for Fedora Silverblue, Kinoite, and other rpm-ostree-based systems. It presents common maintenance tasks in a guided interface, with clear status and command output when you need it.
 
-## Why Atomic Helper?
+> **Project status:** The current released application uses Electron and JavaScript. A Rust migration has not yet been implemented. See [Rust migration](#rust-migration) for the proposed direction.
 
-Fedora Atomic systems are excellent, but they come with a few recurring tasks:
+## Features
 
-- checking for system updates
-- installing Flatpak apps and system package updates
-- enabling the usual post-install steps
-- managing security settings such as DNS and firewall
-- restarting at the right time
+- **System maintenance:** check for and stage system updates, update Flatpaks, clean up unused data, and roll back to the previous deployment.
+- **Firmware:** check for and install available firmware updates.
+- **Post-install setup:** enable Flathub, install Flatseal, configure RPM Fusion and codecs, and enable automatic system updates.
+- **Security:** manage the firewall, inspect SELinux status, and choose DNS providers or custom DNS addresses.
+- **Apps and packages:** list and remove Flatpaks; add and remove layered system packages.
+- **App updates:** check GitHub Releases for a newer AppImage and install it in-app when running from an AppImage.
 
-Atomic Helper makes those tasks approachable and transparent, with clear status indicators and detailed command output when needed.
-
-## Highlights
-
-### Home
-- Update the system and Flatpak apps with one click
-- Check for system updates or firmware updates
-- Clean up caches and unused runtimes
-- Roll back to the previous system version if needed
-- Restart banner when a reboot is pending
-
-### Post-install
-- One-click setup for common Fedora Atomic tasks
-- Flathub, Flatseal, RPM Fusion, codecs, and automatic updates
-- Clear status for each step: done, waiting for restart, blocked, or recommended
-
-### Security
-- Turn the firewall on or tighten it to the stricter public zone
-- View SELinux status and automatic update status
-- Change DNS to Cloudflare, Google, Quad9, AdGuard, or custom servers
-
-### Apps & packages
-- Add or remove layered system packages
-- Review and remove installed Flatpak apps
+System updates are staged and generally require a restart to take effect. Privileged actions use the desktop's normal authorization prompt.
 
 ## Install
 
-Atomic Helper ships as a single AppImage, which fits Fedora Atomic well because it avoids modifying the base system.
-
-### 1. Download the AppImage
-
-Download the latest release from the GitHub releases page:
-
-https://github.com/VeyroDeveloper/atomic-helper/releases/latest
-
-### 2. Make it executable
-
-Linux shell:
+Download the latest AppImage from [GitHub Releases](https://github.com/VeyroDeveloper/atomic-helper/releases/latest).
 
 ```bash
 chmod +x AtomicHelper-x86_64.AppImage
-```
-
-Or via the file manager: right-click the file, open Properties, and enable "Allow executing file as program".
-
-### 3. Run it
-
-```bash
 ./AtomicHelper-x86_64.AppImage
 ```
 
-If you see a FUSE-related error, use:
+If FUSE is unavailable, run it with:
 
 ```bash
 ./AtomicHelper-x86_64.AppImage --appimage-extract-and-run
 ```
 
-### 4. Optional: add it to your applications menu
-
-```bash
-mkdir -p ~/Applications ~/.local/share/applications ~/.local/share/icons
-mv AtomicHelper-x86_64.AppImage ~/Applications/
-cp icon.png ~/.local/share/icons/atomic-helper.png
-
-cat > ~/.local/share/applications/atomic-helper.desktop <<EOF
-[Desktop Entry]
-Type=Application
-Name=Atomic Helper
-Comment=Friendly one-click updates and upkeep for Fedora Atomic
-Exec=$HOME/Applications/AtomicHelper-x86_64.AppImage
-Icon=$HOME/.local/share/icons/atomic-helper.png
-Terminal=false
-Categories=System;Settings;
-EOF
-```
-
-After that, log out and back in if the app does not appear immediately.
+The published release workflow currently attaches an x86_64 AppImage. The app updater can replace the running app only when Atomic Helper itself is launched as an AppImage; otherwise it opens the release page.
 
 ## Requirements
 
-- Fedora Silverblue, Kinoite, or another rpm-ostree-based Fedora Atomic desktop
-- `flatpak` and `rpm-ostree` installed (included by default)
-- `NetworkManager` for DNS changes (included by default on Fedora desktops)
-- A desktop session with a policy prompt for privileged actions
-
-## How updates work
-
-Atomic Helper can check GitHub for a newer release and present an in-app update banner when one is available.
-
-If the app is running as an AppImage, the app can download the new AppImage, replace the old one, and restart itself. If it is not running as an AppImage, the app opens the download page instead.
+- Fedora Silverblue, Kinoite, or another rpm-ostree-based desktop
+- `rpm-ostree` and `flatpak` for system and app maintenance
+- NetworkManager for DNS management
+- A desktop session with a policy authorization prompt for privileged actions
 
 ## Build from source
 
-You only need `curl` and `python3` (or `unzip`). No Node.js installation is required.
+The existing Electron build script requires Linux, `curl`, and either `unzip` or Python 3. It downloads Electron and `appimagetool` as needed.
 
 ```bash
 git clone https://github.com/VeyroDeveloper/atomic-helper.git
 cd atomic-helper
-./build.sh
+bash ./build.sh
 ```
 
-The build script downloads Electron and `appimagetool`, packages the app, and creates an AppImage such as:
+The output is `AtomicHelper-x86_64.AppImage` on x86_64 or `AtomicHelper-aarch64.AppImage` on aarch64.
 
-```text
-AtomicHelper-x86_64.AppImage
-```
+## Publish a release
 
-## Releasing a new version
-
-To publish a new release:
-
-1. Increase the version in `package.json`
-2. Commit and push your changes
-3. Create and push a matching tag
+Update the version in `package.json`, commit and push the change, then push a matching version tag. For example:
 
 ```bash
-git tag v0.3.1
-git push origin v0.3.1
+git tag v0.3.2
+git push origin main
+git push origin v0.3.2
 ```
 
-The GitHub Actions workflow in `.github/workflows/release.yml` will build the AppImage and attach it to a GitHub release automatically. Installed copies will detect the new version on their next start.
+The tag must match the version in `package.json` (for example, `v0.3.2` and `0.3.2`). The GitHub Actions workflow builds and attaches the x86_64 AppImage. Follow the run in [Actions](https://github.com/VeyroDeveloper/atomic-helper/actions) and check [Releases](https://github.com/VeyroDeveloper/atomic-helper/releases) for the published asset.
 
-## Project structure
+## Changelog
 
-```text
-.
-├── build.sh             # Builds the AppImage package
-├── main.js              # Electron main process and privileged actions
-├── preload.js           # Safe IPC bridge
-├── renderer.js          # UI logic and interactions
-├── index.html           # App layout
-├── style.css            # Styling
-├── icon.png, icon.svg   # App branding
-├── package.json         # Version and metadata
-├── README.md            # Project documentation
-├── LICENSE              # MIT license
-└── .github/workflows    # Release automation
-```
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
-## Safety and design
+## Rust migration
 
-Atomic Helper is designed to be careful and transparent:
+Rust is a longer-term architecture change, not a feature of the current release. The existing Electron main process owns privileged command execution, system status, and AppImage updating; replacing it requires preserving those safety boundaries and the release/update behavior.
 
-- The UI sends only a fixed list of known actions
-- Package names, Flatpak IDs, and DNS values are validated before use
-- Privileged actions use the normal desktop password prompt
-- Detailed command output is visible in the activity view when something goes wrong
+A sensible migration should be incremental:
 
-## Status
+1. Define and test the Rust backend's command and data interfaces while keeping the current UI working.
+2. Port system discovery and report generation, then maintenance actions, with input validation and explicit command allowlists.
+3. Evaluate a Rust desktop shell such as Tauri only after the backend behavior has parity tests.
+4. Benchmark startup time, memory use, and package size against the current Electron build before claiming efficiency gains.
+5. Update AppImage packaging, release automation, and the in-app updater together, then publish a test release.
 
-This project is in active early development, but the core maintenance workflow is already in place. If a step fails on your system, check the detailed log in the activity sheet and open an issue with the output so it can be improved.
+Rust can improve memory safety and may reduce runtime overhead, but the current app spends much of its work waiting on system tools and network operations. Performance benefits should be measured rather than assumed. No Rust rewrite or Rust build target is included yet.
+
+## Safety
+
+- The UI requests named actions rather than arbitrary shell commands.
+- User-supplied package names, Flatpak IDs, and DNS addresses are validated.
+- Privileged system changes use the desktop's authorization mechanism.
+- Update downloads are obtained from the project's GitHub Releases.
 
 ## License
 
-MIT. See [LICENSE](LICENSE) for full details.
-
----
-
-Built with care for Fedora Atomic desktops.
+MIT. See [LICENSE](LICENSE).
