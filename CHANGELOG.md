@@ -2,9 +2,10 @@
 
 Notable changes to Atomic Helper are recorded here. Release assets and generated release notes are available on [GitHub Releases](https://github.com/VeyroDeveloper/atomic-helper/releases).
 
-## [Unreleased] — planned v0.3.3
+## [Unreleased] — planned v0.3.4
 
-- Ask for confirmation with the target version before downloading and installing an in-app update.
+- Show a confirmation popup when an app update is available, with an option to download and install it immediately.
+- Include the popup and About/report enhancements in packaged AppImages.
 
 ## [0.3.2] - 2026-11-04
 

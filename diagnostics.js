@@ -1,7 +1,7 @@
 'use strict';
 
-// The packaged app loads this script after renderer.js. The report is assembled
-// on demand and stays on the user's machine unless they choose to share it.
+// The packaged app loads this script after renderer.js. It provides the
+// system-report action and the update-available confirmation prompt.
 (() => {
   const about = document.querySelector('#view-help .card:last-child');
   const updateButton = document.querySelector('#btn-check-app-update');
@@ -21,13 +21,20 @@
     mode.textContent = 'Could not determine whether in-app updates are supported.';
   });
 
-  // Intercept the update action to confirm the target version before starting
-  // the existing download/install flow. This listener runs in capture phase so
-  // renderer.js's direct click handler does not start a download prematurely.
   const updateBannerButton = document.querySelector('#btn-update-app');
+  const updateBanner = document.querySelector('#banner-update');
+  const updateTitle = document.querySelector('#banner-update-title');
   const dialog = document.querySelector('#dialog');
-  if (updateBannerButton && dialog) {
+  if (updateBannerButton && updateBanner && updateTitle && dialog) {
     let installing = false;
+    let promptedVersion = null;
+    let allowNextClick = false;
+
+    const visibleVersion = () => {
+      if (updateBanner.classList.contains('hidden')) return null;
+      const match = updateTitle.textContent.match(/version\s+(\d+\.\d+(?:\.\d+){0,2})/i);
+      return match ? match[1] : null;
+    };
 
     const askToUpdate = (version) => new Promise((resolve) => {
       const title = dialog.querySelector('#dialog-title');
@@ -35,7 +42,7 @@
       const okButton = dialog.querySelector('#dialog-ok');
       const cancelButton = dialog.querySelector('#dialog-cancel');
       title.textContent = `Update to version ${version}?`;
-      body.textContent = 'Atomic Helper will download and install this update, then restart automatically. You can save your work before continuing.';
+      body.textContent = 'Atomic Helper will download and install this update, then restart automatically. Save your work before continuing.';
       okButton.textContent = 'Download and update';
       okButton.classList.remove('danger');
       dialog.classList.remove('hidden');
@@ -56,47 +63,42 @@
       document.addEventListener('keydown', onKey);
     });
 
+    const promptForUpdate = async (version) => {
+      if (installing || promptedVersion === version) return;
+      promptedVersion = version;
+      if (!(await askToUpdate(version))) return;
+      allowNextClick = true;
+      updateBannerButton.click();
+    };
+
+    // renderer.js handles the banner button. Require confirmation for manual
+    // clicks too, while allowing the confirmed click through to its handler.
     updateBannerButton.addEventListener('click', async (event) => {
+      if (allowNextClick) {
+        allowNextClick = false;
+        return;
+      }
       event.preventDefault();
       event.stopImmediatePropagation();
       if (installing) return;
-
-      const statusText = document.querySelector('#about-update')?.textContent || '';
-      const bannerText = document.querySelector('#banner-update-title')?.textContent || '';
-      const match = `${statusText} ${bannerText}`.match(/(?:version\s+|:\s*v?)(\d+\.\d+(?:\.\d+){0,2})/i);
-      const version = match ? match[1] : 'the latest version';
+      const version = visibleVersion() || 'the latest version';
       if (!(await askToUpdate(version))) return;
-
-      installing = true;
-      const subtitle = document.querySelector('#banner-update-sub');
-      const cancel = document.querySelector('#btn-update-later');
-      updateBannerButton.disabled = true;
-      if (cancel) cancel.disabled = true;
-      if (subtitle) subtitle.textContent = 'Downloading…';
-
-      const off = window.api.onUpdateProgress((pct) => {
-        if (subtitle && pct != null) subtitle.textContent = `Downloading… ${pct}%`;
-      });
-      let result;
-      try {
-        result = await window.api.appUpdateInstall();
-      } catch (error) {
-        result = { ok: false, message: String(error && error.message ? error.message : error) };
-      } finally {
-        off();
-      }
-
-      if (result.ok && result.restarting) {
-        if (subtitle) subtitle.textContent = 'Installed. Restarting…';
-        return;
-      }
-      installing = false;
-      updateBannerButton.disabled = false;
-      if (cancel) cancel.disabled = false;
-      if (subtitle) subtitle.textContent = result.ok
-        ? 'The release page was opened in your browser.'
-        : `Update failed: ${result.message}`;
+      allowNextClick = true;
+      updateBannerButton.click();
     }, true);
+
+    // The existing startup/manual update check reveals the banner. Observe it
+    // so the confirmation appears as soon as a new version is reported.
+    const observer = new MutationObserver(() => {
+      const version = visibleVersion();
+      if (version) promptForUpdate(version);
+    });
+    observer.observe(updateBanner, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true, characterData: true });
+
+    // Cover the case where the update banner was already visible before this
+    // observer was attached.
+    const existingVersion = visibleVersion();
+    if (existingVersion) promptForUpdate(existingVersion);
   }
 
   const button = document.createElement('button');

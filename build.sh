@@ -46,7 +46,7 @@ find "$LIB/locales" -name '*.pak' ! -name 'en-US.pak' ! -name 'de.pak' -delete
 
 mkdir -p "$LIB/resources/app"
 cp "$SRC"/{package.json,main.js,preload.js,index.html,style.css,renderer.js,diagnostics.js,icon.png,icon.svg} "$LIB/resources/app/"
-# Load the optional diagnostics feature in the packaged app without changing the source HTML.
+# Load the optional About/report and update-notice enhancements in the packaged app.
 sed -i 's#</body>#<script src="diagnostics.js"></script></body>#' "$LIB/resources/app/index.html"
 
 cat > "$APPDIR/AppRun" <<'EOF'
