@@ -175,3 +175,5 @@ details view of the activity window and helps a lot.
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
+Build with help of Claude AI
