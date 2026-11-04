@@ -2,10 +2,15 @@
 
 Notable changes to Atomic Helper are recorded here. Release assets and generated release notes are available on [GitHub Releases](https://github.com/VeyroDeveloper/atomic-helper/releases).
 
-## [Unreleased] — planned v0.3.4
+## [0.3.5] - 2026-11-04
 
-- Show a confirmation popup when an app update is available, with an option to download and install it immediately.
-- Include the popup and About/report enhancements in packaged AppImages.
+- Mini update to verify the in-app update flow end-to-end.
+- Added a clearer update-confirmation prompt before downloading the new AppImage.
+
+## [0.3.4] - 2026-11-04
+
+- Added a confirmation popup when an app update is available.
+- Included the report and update-helper enhancements in packaged AppImages.
 
 ## [0.3.2] - 2026-11-04
 
@@ -23,6 +28,8 @@ Notable changes to Atomic Helper are recorded here. Release assets and generated
 - Added the Electron desktop application for Fedora Atomic maintenance, setup, and security tasks.
 - Added GitHub Releases-based app update checks and AppImage update installation.
 
+[0.3.5]: https://github.com/VeyroDeveloper/atomic-helper/releases/tag/v0.3.5
+[0.3.4]: https://github.com/VeyroDeveloper/atomic-helper/releases/tag/v0.3.4
 [0.3.2]: https://github.com/VeyroDeveloper/atomic-helper/releases/tag/v0.3.2
 [0.3.1]: https://github.com/VeyroDeveloper/atomic-helper/releases/tag/v0.3.1
 [0.3.0]: https://github.com/VeyroDeveloper/atomic-helper/releases/tag/v0.3.0
