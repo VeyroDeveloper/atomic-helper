@@ -21,6 +21,84 @@
     mode.textContent = 'Could not determine whether in-app updates are supported.';
   });
 
+  // Intercept the update action to confirm the target version before starting
+  // the existing download/install flow. This listener runs in capture phase so
+  // renderer.js's direct click handler does not start a download prematurely.
+  const updateBannerButton = document.querySelector('#btn-update-app');
+  const dialog = document.querySelector('#dialog');
+  if (updateBannerButton && dialog) {
+    let installing = false;
+
+    const askToUpdate = (version) => new Promise((resolve) => {
+      const title = dialog.querySelector('#dialog-title');
+      const body = dialog.querySelector('#dialog-body');
+      const okButton = dialog.querySelector('#dialog-ok');
+      const cancelButton = dialog.querySelector('#dialog-cancel');
+      title.textContent = `Update to version ${version}?`;
+      body.textContent = 'Atomic Helper will download and install this update, then restart automatically. You can save your work before continuing.';
+      okButton.textContent = 'Download and update';
+      okButton.classList.remove('danger');
+      dialog.classList.remove('hidden');
+      cancelButton.focus();
+
+      const finish = (accepted) => {
+        dialog.classList.add('hidden');
+        okButton.removeEventListener('click', accept);
+        cancelButton.removeEventListener('click', decline);
+        document.removeEventListener('keydown', onKey);
+        resolve(accepted);
+      };
+      const accept = () => finish(true);
+      const decline = () => finish(false);
+      const onKey = (event) => { if (event.key === 'Escape') decline(); };
+      okButton.addEventListener('click', accept);
+      cancelButton.addEventListener('click', decline);
+      document.addEventListener('keydown', onKey);
+    });
+
+    updateBannerButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (installing) return;
+
+      const statusText = document.querySelector('#about-update')?.textContent || '';
+      const bannerText = document.querySelector('#banner-update-title')?.textContent || '';
+      const match = `${statusText} ${bannerText}`.match(/(?:version\s+|:\s*v?)(\d+\.\d+(?:\.\d+){0,2})/i);
+      const version = match ? match[1] : 'the latest version';
+      if (!(await askToUpdate(version))) return;
+
+      installing = true;
+      const subtitle = document.querySelector('#banner-update-sub');
+      const cancel = document.querySelector('#btn-update-later');
+      updateBannerButton.disabled = true;
+      if (cancel) cancel.disabled = true;
+      if (subtitle) subtitle.textContent = 'Downloading…';
+
+      const off = window.api.onUpdateProgress((pct) => {
+        if (subtitle && pct != null) subtitle.textContent = `Downloading… ${pct}%`;
+      });
+      let result;
+      try {
+        result = await window.api.appUpdateInstall();
+      } catch (error) {
+        result = { ok: false, message: String(error && error.message ? error.message : error) };
+      } finally {
+        off();
+      }
+
+      if (result.ok && result.restarting) {
+        if (subtitle) subtitle.textContent = 'Installed. Restarting…';
+        return;
+      }
+      installing = false;
+      updateBannerButton.disabled = false;
+      if (cancel) cancel.disabled = false;
+      if (subtitle) subtitle.textContent = result.ok
+        ? 'The release page was opened in your browser.'
+        : `Update failed: ${result.message}`;
+    }, true);
+  }
+
   const button = document.createElement('button');
   button.className = 'btn';
   button.textContent = 'Export system report';

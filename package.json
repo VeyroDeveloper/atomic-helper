@@ -1,7 +1,7 @@
 {
   "name": "atomic-helper",
   "productName": "Atomic Helper",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Friendly one-click maintenance, setup and security for Fedora Atomic desktops",
   "main": "main.js",
   "license": "MIT",
