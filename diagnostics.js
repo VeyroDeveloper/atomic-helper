@@ -7,6 +7,20 @@
   const updateButton = document.querySelector('#btn-check-app-update');
   if (!about || !updateButton || !window.api) return;
 
+  const mode = document.createElement('p');
+  mode.className = 'muted';
+  mode.setAttribute('role', 'status');
+  mode.textContent = 'Checking update support…';
+  updateButton.insertAdjacentElement('beforebegin', mode);
+
+  window.api.appInfo().then((info) => {
+    mode.textContent = info.appImage
+      ? 'In-app updates are supported for this AppImage.'
+      : 'In-app installation requires launching Atomic Helper as an AppImage; this copy opens the release page instead.';
+  }).catch(() => {
+    mode.textContent = 'Could not determine whether in-app updates are supported.';
+  });
+
   const button = document.createElement('button');
   button.className = 'btn';
   button.textContent = 'Export system report';
