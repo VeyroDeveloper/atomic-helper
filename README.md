@@ -1,60 +1,69 @@
-<p align="center">
-  <img src="icon.png" alt="Atomic Helper icon" width="128">
-</p>
-
-<h1 align="center">Atomic Helper</h1>
+# Atomic Helper
 
 <p align="center">
-  Friendly one-click maintenance, setup and security for Fedora Atomic desktops.
+  <img src="icon.png" alt="Atomic Helper icon" width="128" />
 </p>
 
----
+<p align="center">
+  <strong>Friendly one-click maintenance, setup, and security for Fedora Atomic desktops.</strong>
+</p>
 
-Atomic Helper is a small desktop app for Fedora Atomic (Silverblue, Kinoite and friends) and other
-rpm-ostree based distros. It saves you from digging through websites to find out what to do after
-installing, and turns the usual maintenance tasks into simple buttons.
+Atomic Helper is a lightweight desktop app for Fedora Silverblue, Kinoite, and other rpm-ostree-based systems. It brings the most common maintenance tasks into a clean, guided interface so you can keep your system healthy without digging through documentation or terminal commands.
 
-## Features
+## Why Atomic Helper?
 
-**Home**
-- Update the system and all Flatpak apps with one click
-- Check for updates, check and install firmware updates
+Fedora Atomic systems are excellent, but they come with a few recurring tasks:
+
+- checking for system updates
+- installing Flatpak apps and system package updates
+- enabling the usual post-install steps
+- managing security settings such as DNS and firewall
+- restarting at the right time
+
+Atomic Helper makes those tasks approachable and transparent, with clear status indicators and detailed command output when needed.
+
+## Highlights
+
+### Home
+- Update the system and Flatpak apps with one click
+- Check for system updates or firmware updates
 - Clean up caches and unused runtimes
-- Roll back to the previous system version
-- Restart banner whenever a restart is needed
+- Roll back to the previous system version if needed
+- Restart banner when a reboot is pending
 
-**Post-install**
-- One click sets up the usual first steps: Flathub, Flatseal, RPM Fusion, multimedia codecs and automatic updates
-- Every step shows its state (done, needs restart, not available yet) and can also be run on its own
+### Post-install
+- One-click setup for common Fedora Atomic tasks
+- Flathub, Flatseal, RPM Fusion, codecs, and automatic updates
+- Clear status for each step: done, waiting for restart, blocked, or recommended
 
-**Security**
-- Turn on the firewall with one click
-- Switch to the stricter `public` firewall zone
-- Automatic update status and SELinux status at a glance
-- Change the DNS server: Cloudflare, Google, Quad9, AdGuard, custom IPs, or back to automatic
+### Security
+- Turn the firewall on or tighten it to the stricter public zone
+- View SELinux status and automatic update status
+- Change DNS to Cloudflare, Google, Quad9, AdGuard, or custom servers
 
-**Apps & packages**
+### Apps & packages
 - Add or remove layered system packages
-- List and remove Flatpak apps
+- Review and remove installed Flatpak apps
 
 ## Install
 
-Atomic Helper is distributed as an AppImage, a single file that runs without installing anything into
-your system. That fits Atomic distros well, because the base system stays untouched.
+Atomic Helper ships as a single AppImage, which fits Fedora Atomic well because it avoids modifying the base system.
 
-### 1. Get the AppImage
+### 1. Download the AppImage
 
-Download `AtomicHelper-x86_64.AppImage` from the
-[latest release](https://github.com/VeyroDeveloper/atomic-helper/releases/latest).
-If you prefer, you can also build it yourself, see [Build](#build) below.
+Download the latest release from the GitHub releases page:
+
+https://github.com/VeyroDeveloper/atomic-helper/releases/latest
 
 ### 2. Make it executable
+
+Linux shell:
 
 ```bash
 chmod +x AtomicHelper-x86_64.AppImage
 ```
 
-Or in the file manager: right-click the file, open Properties, and enable "Allow executing file as program".
+Or via the file manager: right-click the file, open Properties, and enable "Allow executing file as program".
 
 ### 3. Run it
 
@@ -62,15 +71,13 @@ Or in the file manager: right-click the file, open Properties, and enable "Allow
 ./AtomicHelper-x86_64.AppImage
 ```
 
-Or just double-click it. If it complains about FUSE, use:
+If you see a FUSE-related error, use:
 
 ```bash
 ./AtomicHelper-x86_64.AppImage --appimage-extract-and-run
 ```
 
-### 4. Optional: add it to your app menu
-
-Put the AppImage somewhere permanent, for example `~/Applications`, then create a launcher:
+### 4. Optional: add it to your applications menu
 
 ```bash
 mkdir -p ~/Applications ~/.local/share/applications ~/.local/share/icons
@@ -89,36 +96,24 @@ Categories=System;Settings;
 EOF
 ```
 
-After that, Atomic Helper shows up in your app launcher. Log out and in again if it does not appear right away.
+After that, log out and back in if the app does not appear immediately.
 
-### Requirements
+## Requirements
 
-- Fedora Silverblue, Kinoite, or another rpm-ostree based system
-- `flatpak` and `rpm-ostree` (both are included by default)
-- `NetworkManager` for the DNS feature (included by default on Fedora desktops)
-- A desktop session with a polkit password prompt, which is the default
+- Fedora Silverblue, Kinoite, or another rpm-ostree-based Fedora Atomic desktop
+- `flatpak` and `rpm-ostree` installed (included by default)
+- `NetworkManager` for DNS changes (included by default on Fedora desktops)
+- A desktop session with a policy prompt for privileged actions
 
-### Updating and uninstalling
+## How updates work
 
-Atomic Helper checks GitHub for a newer release when it starts. If there is one, a banner appears on
-the Home tab. Click **Update app** and it downloads the new AppImage, replaces the old one and restarts
-itself. You can also check by hand under Help, About. In-app updating only works when the app runs as an
-AppImage; otherwise the button opens the download page.
+Atomic Helper can check GitHub for a newer release and present an in-app update banner when one is available.
 
-To uninstall, delete the AppImage and, if you made one, the launcher and icon:
+If the app is running as an AppImage, the app can download the new AppImage, replace the old one, and restart itself. If it is not running as an AppImage, the app opens the download page instead.
 
-```bash
-rm ~/Applications/AtomicHelper-x86_64.AppImage
-rm ~/.local/share/applications/atomic-helper.desktop
-rm ~/.local/share/icons/atomic-helper.png
-```
+## Build from source
 
-Atomic Helper keeps no settings outside its own app data, and changes it made to your system
-(like added packages or DNS) can be undone from within the app.
-
-## Build
-
-You need `curl` and `python3` (or `unzip`). No Node.js is required.
+You only need `curl` and `python3` (or `unzip`). No Node.js installation is required.
 
 ```bash
 git clone https://github.com/VeyroDeveloper/atomic-helper.git
@@ -126,54 +121,61 @@ cd atomic-helper
 ./build.sh
 ```
 
-The script downloads Electron and `appimagetool` once and produces `AtomicHelper-x86_64.AppImage`
-(or the `aarch64` variant) in the project folder. If the AppImage complains about FUSE, run it with:
+The build script downloads Electron and `appimagetool`, packages the app, and creates an AppImage such as:
 
-```bash
-./AtomicHelper-x86_64.AppImage --appimage-extract-and-run
+```text
+AtomicHelper-x86_64.AppImage
 ```
 
 ## Releasing a new version
 
-Pushing code alone does not update the app. Users get an update when you publish a release:
+To publish a new release:
 
-1. Raise `"version"` in `package.json`, for example to `0.3.1`.
-2. Commit and push.
-3. Create and push a tag that matches it:
-   ```bash
-   git tag v0.3.1
-   git push origin v0.3.1
-   ```
+1. Increase the version in `package.json`
+2. Commit and push your changes
+3. Create and push a matching tag
 
-The workflow in `.github/workflows/release.yml` then builds the AppImage and attaches it to a new
-GitHub release. Installed copies detect it on their next start. The repository must be public for
-the update check to work without a login.
+```bash
+git tag v0.3.1
+git push origin v0.3.1
+```
 
-## How it works
+The GitHub Actions workflow in `.github/workflows/release.yml` will build the AppImage and attach it to a GitHub release automatically. Installed copies will detect the new version on their next start.
 
-- The UI never sends raw commands. It only sends action names from a fixed whitelist in `main.js`.
-- Package names, Flatpak IDs and DNS addresses are validated before use.
-- Privileged steps go through the normal desktop password prompt (polkit). Atomic Helper never sees your password.
-- Command output is shown in a details view so you can always see what happened.
+## Project structure
 
-## Project layout
+```text
+.
+├── build.sh             # Builds the AppImage package
+├── main.js              # Electron main process and privileged actions
+├── preload.js           # Safe IPC bridge
+├── renderer.js          # UI logic and interactions
+├── index.html           # App layout
+├── style.css            # Styling
+├── icon.png, icon.svg   # App branding
+├── package.json         # Version and metadata
+├── README.md            # Project documentation
+├── LICENSE              # MIT license
+└── .github/workflows    # Release automation
+```
 
-| File | Purpose |
-| --- | --- |
-| `main.js` | Electron main process: actions, status checks, command execution |
-| `preload.js` | Safe bridge between UI and main process |
-| `renderer.js` | UI logic |
-| `index.html`, `style.css` | Layout and styling |
-| `build.sh` | Builds the AppImage |
+## Safety and design
+
+Atomic Helper is designed to be careful and transparent:
+
+- The UI sends only a fixed list of known actions
+- Package names, Flatpak IDs, and DNS values are validated before use
+- Privileged actions use the normal desktop password prompt
+- Detailed command output is visible in the activity view when something goes wrong
 
 ## Status
 
-Early version (0.2.0). The post-install and security features have not been tested on every
-Fedora release yet, so please open an issue if a step fails. The full command output is in the
-details view of the activity window and helps a lot.
+This project is in active early development, but the core maintenance workflow is already in place. If a step fails on your system, check the detailed log in the activity sheet and open an issue with the output so it can be improved.
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE) for full details.
 
-Build with help of Claude AI
+---
+
+Built with care for Fedora Atomic desktops.
