@@ -3,10 +3,6 @@
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-/* ------------------------------------------------------------------ */
-/* icons                                                               */
-/* ------------------------------------------------------------------ */
-
 const ICONS = {
   atom: '<circle cx="12" cy="12" r="1.7" fill="currentColor"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/>',
@@ -27,53 +23,37 @@ const ICONS = {
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>',
   lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   desktop: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  docs: '<path d="M6 4h9l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M15 4v5h5"/><path d="M8 11h8M8 15h8"/>',
+  terminal: '<path d="M4 6.5A1.5 1.5 0 0 1 5.5 5h13A1.5 1.5 0 0 1 20 6.5v11A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-11z"/><path d="M8 9l3 3-3 3M13 15h3"/>'
 };
 
 function icon(name) {
-  return `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+  return `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 }
-
-/* ------------------------------------------------------------------ */
-/* state                                                               */
-/* ------------------------------------------------------------------ */
 
 const state = {
   status: null,
   busy: false,
   setup: null,
-  lastCheck: null, // { result: 'available' | 'none', at: ISO string, version: string|null }
+  lastCheck: null,
 };
-
-try {
-  const saved = JSON.parse(localStorage.getItem('lastCheck') || 'null');
-  if (saved && saved.result) state.lastCheck = saved;
-} catch (_) { /* storage may be unavailable */ }
-
-function saveLastCheck() {
-  try { localStorage.setItem('lastCheck', JSON.stringify(state.lastCheck)); } catch (_) { /* ignore */ }
-}
-
-/* ------------------------------------------------------------------ */
-/* quick-action tiles                                                  */
-/* ------------------------------------------------------------------ */
 
 const TILES = [
   { action: 'update-system', icon: 'download', title: 'Update system', desc: 'Download the newest Fedora version. It starts after your next restart.' },
   { action: 'update-apps', icon: 'apps', title: 'Update apps', desc: 'Bring all your Flatpak apps to their newest versions.' },
   { action: 'firmware-check', icon: 'chip', title: 'Check firmware', desc: 'Look for BIOS and device firmware updates.' },
   { action: 'cleanup', icon: 'broom', title: 'Clean up', desc: 'Clear caches and unused app runtimes to free up space.' },
-  {
-    action: 'rollback', icon: 'undo', title: 'Roll back', desc: 'Return to the previous system version if something broke.',
-    confirm: { title: 'Go back to the previous version?', body: 'Your next restart will start the previous system version. Your files and apps are not affected.', ok: 'Roll back' },
-  },
-  { action: 'add-flathub', icon: 'store', title: 'Enable Flathub', desc: 'Add the biggest source of Flatpak apps.' },
-  {
-    action: 'reboot', icon: 'power', title: 'Restart', desc: 'Restart now to apply pending changes.',
-    confirm: { title: 'Restart your computer now?', body: 'Save your work first. Open apps will be closed.', ok: 'Restart' },
-  },
+  { action: 'open-fedora-docs', icon: 'docs', title: 'Fedora docs', desc: 'Open the official Fedora Atomic documentation.' },
+  { action: 'open-flathub', icon: 'store', title: 'Flathub', desc: 'Browse the main source of Flatpak apps.' },
+  { action: 'open-rpmfusion', icon: 'sparkle', title: 'RPM Fusion', desc: 'Open the multimedia and extra repo site.' },
+  { action: 'system-diagnostics', icon: 'terminal', title: 'System diagnostics', desc: 'Collect a quick status summary for support or troubleshooting.' },
+  { action: 'reboot', icon: 'power', title: 'Restart', desc: 'Restart now to apply pending changes.' },
 ];
 
-const CONFIRMS = Object.fromEntries(TILES.filter((t) => t.confirm).map((t) => [t.action, t.confirm]));
+const CONFIRMS = {
+  rollback: { title: 'Go back to the previous version?', body: 'Your next restart will start the previous system version. Your files and apps are not affected.', ok: 'Roll back' },
+  reboot: { title: 'Restart your computer now?', body: 'Save your work first. Open apps will be closed.', ok: 'Restart' },
+};
 
 function buildTiles() {
   const host = $('#tiles');
@@ -87,10 +67,6 @@ function buildTiles() {
     host.appendChild(b);
   }
 }
-
-/* ------------------------------------------------------------------ */
-/* confirm dialog                                                      */
-/* ------------------------------------------------------------------ */
 
 function confirmDialog({ title, body, ok = 'OK', danger = false }) {
   return new Promise((resolve) => {
@@ -119,19 +95,12 @@ function confirmDialog({ title, body, ok = 'OK', danger = false }) {
   });
 }
 
-/* ------------------------------------------------------------------ */
-/* activity sheet                                                      */
-/* ------------------------------------------------------------------ */
-
 const log = { lines: [''], carriage: false };
-
 function resetLog() {
   log.lines = [''];
   log.carriage = false;
   $('#log').textContent = '';
 }
-
-// Minimal terminal behaviour: "\n" starts a new line, "\r" rewrites the current one.
 function appendLog(text) {
   for (const ch of text) {
     if (ch === '\n') { log.lines.push(''); log.carriage = false; }
@@ -145,7 +114,6 @@ function appendLog(text) {
   const el = $('#log');
   el.textContent = log.lines.join('\n');
   el.scrollTop = el.scrollHeight;
-
   const pct = [...text.matchAll(/(\d{1,3})%/g)].map((m) => Number(m[1])).filter((n) => n <= 100).pop();
   if (pct !== undefined) {
     const bar = $('#sheet-bar');
@@ -154,18 +122,12 @@ function appendLog(text) {
   }
 }
 
-function setSheetIcon(kind, name) {
-  const el = $('#sheet-icon');
-  el.className = `sheet-icon ${kind}`;
-  el.innerHTML = icon(name);
-}
-
 let sheetLive = false;
-
 function openSheet(title) {
   sheetLive = true;
   resetLog();
-  setSheetIcon('spin', 'refresh');
+  $('#sheet-icon').className = 'sheet-icon spin';
+  $('#sheet-icon').innerHTML = icon('refresh');
   $('#sheet-title').textContent = title;
   $('#sheet-sub').textContent = 'This can take a few minutes. You can keep using your computer.';
   const bar = $('#sheet-bar');
@@ -179,15 +141,14 @@ function openSheet(title) {
   $('#btn-sheet-restart').classList.add('hidden');
   $('#sheet').classList.remove('hidden');
 }
-
 function finishSheet(res) {
   const bar = $('#sheet-bar');
   bar.classList.remove('indeterminate');
   bar.style.width = '';
   bar.classList.add(res.ok ? 'done' : res.tone === 'info' ? 'done' : 'failed');
-  if (res.ok) setSheetIcon('good', 'check');
-  else if (res.tone === 'info') setSheetIcon('info', 'info');
-  else setSheetIcon('bad', 'alert');
+  const iconName = res.ok ? 'check' : res.tone === 'info' ? 'info' : 'alert';
+  $('#sheet-icon').className = `sheet-icon ${res.ok ? 'good' : res.tone === 'info' ? 'info' : 'bad'}`;
+  $('#sheet-icon').innerHTML = icon(iconName);
   $('#sheet-title').textContent = res.headline;
   $('#sheet-sub').textContent = res.detail || '';
   $('#btn-cancel').classList.add('hidden');
@@ -199,27 +160,12 @@ function finishSheet(res) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* running actions                                                     */
-/* ------------------------------------------------------------------ */
-
 async function perform(action, arg) {
   if (state.busy) return;
-
-  const c = CONFIRMS[action];
-  if (c) {
-    const ok = await confirmDialog({ ...c, danger: action === 'rollback' });
+  if (CONFIRMS[action]) {
+    const ok = await confirmDialog({ ...CONFIRMS[action], danger: action === 'rollback' });
     if (!ok) return;
   }
-  if (action === 'firmware-install') {
-    const ok = await confirmDialog({
-      title: 'Install firmware updates?',
-      body: 'Firmware updates change low-level device software. Keep your computer plugged in and do not turn it off while this runs.',
-      ok: 'Install',
-    });
-    if (!ok) return;
-  }
-
   state.busy = true;
   openSheet('Working…');
   let res;
@@ -229,54 +175,10 @@ async function perform(action, arg) {
     res = { ok: false, tone: 'error', headline: 'Something went wrong', detail: String(e && e.message ? e.message : e) };
   }
   state.busy = false;
-  sheetLive = false; // late progress events from the main process are ignored from here on
   if (res.log) { resetLog(); appendLog(res.log); }
-
-  if (action === 'check' && res.updates) {
-    const v = (res.detail.match(/Version (\S+)/) || [])[1] || null;
-    state.lastCheck = { result: res.updates, at: new Date().toISOString(), version: v, booted: bootedVersion() };
-    saveLastCheck();
-  } else if (res.ok && res.updates === 'none' && action !== 'check') {
-    state.lastCheck = { result: 'none', at: new Date().toISOString(), version: null, booted: bootedVersion() };
-    saveLastCheck();
-  }
-
   finishSheet(res);
-
-  // The sheet offers a restart shortcut whenever a restart is now needed.
   await refreshStatus();
-  if (res.ok && state.status && state.status.pendingReboot && action !== 'reboot') {
-    $('#btn-sheet-restart').classList.remove('hidden');
-  }
-  if (action === 'firmware-check' && res.firmware === 'available') {
-    offerFirmwareInstall();
-  }
-  if ($('#view-packages').classList.contains('active')) renderPackages();
-  if ($('#view-setup').classList.contains('active') || $('#view-security').classList.contains('active')) refreshSetup();
 }
-
-function offerFirmwareInstall() {
-  const actions = $('.sheet-actions', $('#sheet'));
-  if ($('#btn-fw-install')) return;
-  const b = document.createElement('button');
-  b.className = 'btn';
-  b.id = 'btn-fw-install';
-  b.textContent = 'Install firmware updates';
-  b.addEventListener('click', async () => {
-    b.remove();
-    $('#sheet').classList.add('hidden');
-    await perform('firmware-install');
-  });
-  actions.insertBefore(b, $('#btn-close'));
-}
-
-function bootedVersion() {
-  return state.status && state.status.booted ? state.status.booted.version : null;
-}
-
-/* ------------------------------------------------------------------ */
-/* status rendering                                                    */
-/* ------------------------------------------------------------------ */
 
 function fmtBytes(n) {
   if (n == null) return '–';
@@ -287,7 +189,6 @@ function fmtBytes(n) {
 function fmtTime(iso) {
   try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch (_) { return ''; }
 }
-
 function setHero(kind, iconName, title, sub) {
   const el = $('#hero-icon');
   el.className = `hero-icon ${kind}`;
@@ -297,9 +198,7 @@ function setHero(kind, iconName, title, sub) {
 }
 
 async function refreshStatus() {
-  let s;
-  try { s = await window.api.status(); } catch (_) { s = null; }
-  state.status = s;
+  try { state.status = await window.api.status(); } catch (_) { state.status = null; }
   renderStatus();
 }
 
@@ -309,40 +208,19 @@ function renderStatus() {
     setHero('bad', 'alert', "Couldn't read system information", 'Try reopening the app.');
     return;
   }
-
-  // a check from before the last restart is stale
-  if (state.lastCheck && state.lastCheck.booted && s.booted && state.lastCheck.booted !== s.booted.version) {
-    state.lastCheck = null;
-    saveLastCheck();
-  }
-
-  // hero
   if (!s.atomic) {
-    setHero('warn', 'info', "This doesn't look like an Atomic system", 'Atomic Helper is made for Fedora Silverblue, Kinoite and other Atomic desktops. Some buttons will not work here.');
+    setHero('warn', 'info', "This doesn't look like an Atomic system", 'Atomic Helper is made for Fedora Silverblue and Kinoite. Some actions may not work here.');
   } else if (s.pendingReboot) {
     setHero('warn', 'power', 'Restart to finish', s.pendingVersion ? `Version ${s.pendingVersion} is ready. It starts on your next restart.` : 'Your changes are ready. They start on your next restart.');
-  } else if (state.lastCheck && state.lastCheck.result === 'available') {
-    setHero('warn', 'download', 'An update is available', 'Click "Update everything" to download it. You decide when to restart.');
-  } else if (state.lastCheck && state.lastCheck.result === 'none') {
-    setHero('good', 'check', "You're up to date", `Last checked at ${fmtTime(state.lastCheck.at)}.`);
   } else {
     setHero('', 'atom', 'Ready when you are', 'Update everything with one click, or check first to see what is waiting.');
   }
-
-  const meta = [];
-  if (s.booted && s.booted.version) meta.push(`Running version ${s.booted.version}`);
-  if (s.layered.length) meta.push(`${s.layered.length} added package${s.layered.length === 1 ? '' : 's'}`);
-  $('#hero-meta').textContent = meta.join(' · ');
-
+  $('#hero-meta').textContent = s.booted && s.booted.version ? `Running version ${s.booted.version}` : 'System status unknown';
   $('#btn-update-all').innerHTML = `${icon('refresh')}<span>Update everything</span>`;
   $('#btn-check').innerHTML = `${icon('info')}<span>Check for updates</span>`;
-
-  // banner
   const banner = $('#banner-restart');
   banner.classList.toggle('hidden', !s.pendingReboot);
   $('#banner-icon').innerHTML = icon('power');
-
-  // mini cards
   $('#mini-sys-icon').innerHTML = icon('desktop');
   $('#mini-sys-main').textContent = s.pretty;
   $('#mini-sys-sub').textContent = `Linux ${s.kernel}`;
@@ -357,22 +235,9 @@ function renderStatus() {
   } else {
     $('#mini-disk-main').textContent = '–';
   }
-
-  // tile availability
-  for (const t of $$('.tile')) {
-    if (t.dataset.action === 'rollback') {
-      t.disabled = !(s.atomic && s.rollbackAvailable);
-      t.title = t.disabled ? 'There is no previous version to go back to yet.' : '';
-    }
-  }
 }
 
-/* ------------------------------------------------------------------ */
-/* packages view                                                       */
-/* ------------------------------------------------------------------ */
-
 const PKG_RE = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,100}$/;
-
 function listItem(name, sub, onRemove) {
   const li = document.createElement('li');
   const n = document.createElement('span');
@@ -404,32 +269,26 @@ async function renderPackages() {
       }));
     }
   }
-  const pkgHost = $('#pkg-list');
-  const existingEmpty = $('#pkg-empty');
-  if (existingEmpty) existingEmpty.remove();
+  const oldEmpty = $('#pkg-empty');
+  if (oldEmpty) oldEmpty.remove();
   if (!s || !s.layered.length) {
     const e = document.createElement('div');
     e.className = 'empty';
     e.id = 'pkg-empty';
     e.textContent = 'No extra system packages. Your system is exactly as shipped.';
-    pkgHost.after(e);
+    $('#pkg-list').after(e);
   }
 
   $('#btn-pkg-add').innerHTML = `${icon('plus')}<span>Add</span>`;
-
   const fpList = $('#flatpak-list');
   fpList.innerHTML = '';
-  const oldEmpty = $('#fp-empty');
-  if (oldEmpty) oldEmpty.remove();
   let fp;
   try { fp = await window.api.flatpaks(); } catch (_) { fp = { installed: false, apps: [] }; }
   if (!fp.installed) {
     $('#flatpak-note').textContent = 'Flatpak was not found on this system.';
     return;
   }
-  $('#flatpak-note').textContent = fp.apps.length
-    ? `${fp.apps.length} app${fp.apps.length === 1 ? '' : 's'} installed from Flathub or Fedora Flatpaks.`
-    : 'No Flatpak apps installed yet.';
+  $('#flatpak-note').textContent = fp.apps.length ? `${fp.apps.length} app${fp.apps.length === 1 ? '' : 's'} installed.` : 'No Flatpak apps installed yet.';
   for (const a of fp.apps) {
     fpList.appendChild(listItem(a.name, a.id, async () => {
       const ok = await confirmDialog({ title: `Remove ${a.name}?`, body: 'The app is uninstalled. Its documents are not deleted.', ok: 'Remove', danger: true });
@@ -438,33 +297,19 @@ async function renderPackages() {
   }
 }
 
-
-/* ------------------------------------------------------------------ */
-/* post-install + security views                                       */
-/* ------------------------------------------------------------------ */
-
-// st(setup) -> 'done' | 'todo' | 'restart' | 'blocked' | 'info-good' | 'info-warn'
 const SETUP_ITEMS = [
   { id: 'flathub', icon: 'store', title: 'Enable Flathub', action: 'add-flathub', desc: 'The biggest source of apps. Most software should come from here.', st: (x) => (x.flathub ? 'done' : 'todo') },
-  { id: 'flatseal', icon: 'lock', title: 'Install Flatseal', action: 'install-flatseal', desc: 'Lets you see and change what each Flatpak app may access.', st: (x) => (x.flatseal ? 'done' : x.flathub ? 'todo' : 'blocked'), note: 'Enable Flathub first' },
-  { id: 'rpmfusion', icon: 'plus', title: 'Add RPM Fusion', action: 'setup-rpmfusion', desc: 'Extra software source for things Fedora cannot ship itself. Needs a restart.', st: (x) => x.rpmfusion },
-  { id: 'codecs', icon: 'sparkle', title: 'Multimedia codecs', action: 'setup-codecs', desc: 'Full video and audio support (H.264, AAC and more). Needs a restart.', st: (x) => x.codecs, note: 'Add RPM Fusion and restart first' },
+  { id: 'flatseal', icon: 'lock', title: 'Install Flatseal', action: 'install-flatseal', desc: 'Lets you see and change what each Flatpak app may access.', st: (x) => (x.flatseal ? 'done' : 'todo') },
+  { id: 'rpmfusion', icon: 'sparkle', title: 'Add RPM Fusion', action: 'setup-rpmfusion', desc: 'Extra software source for things Fedora cannot ship itself. Needs a restart.', st: (x) => x.rpmfusion },
+  { id: 'codecs', icon: 'sparkle', title: 'Multimedia codecs', action: 'setup-codecs', desc: 'Full video and audio support (H.264, AAC and more). Needs a restart.', st: (x) => x.codecs },
   { id: 'autoupdate', icon: 'refresh', title: 'Automatic updates', action: 'setup-autoupdate', desc: 'Download new system versions in the background. They start after you restart.', st: (x) => (x.autoupdate ? 'done' : 'todo') },
 ];
 
-const AUTOUPDATE_ITEM = SETUP_ITEMS.find((i) => i.id === 'autoupdate');
-
 const SECURITY_ITEMS = [
   { id: 'firewall', icon: 'shield', title: 'Firewall', action: 'firewall-on', btn: 'Turn on', desc: 'Blocks unwanted incoming connections from the network.', st: (x) => (x.firewall.active ? 'done' : 'todo') },
-  {
-    id: 'strict', icon: 'lock', title: 'Stricter firewall', action: 'firewall-strict', btn: 'Tighten',
-    desc: 'Fedora Workstation opens most high ports by default. The stricter "public" zone only allows what you choose.',
-    st: (x) => (!x.firewall.active ? 'blocked' : ['public', 'drop', 'block'].includes(x.firewall.zone) ? 'done' : 'todo'),
-    note: 'Turn on the firewall first',
-    confirm: { title: 'Switch to the stricter firewall?', body: 'Some local sharing features, like KDE Connect, file sharing or casting, may stop working until you allow them again.', ok: 'Tighten' },
-  },
-  AUTOUPDATE_ITEM,
-  { id: 'selinux', icon: 'check', title: 'SELinux', desc: 'Keeps apps and services inside their own boundaries.', st: (x) => (x.selinux === 'enforcing' ? 'info-good' : 'info-warn'), label: (x) => (x.selinux === 'enforcing' ? 'Enforcing' : x.selinux) },
+  { id: 'strict', icon: 'lock', title: 'Stricter firewall', action: 'firewall-strict', btn: 'Tighten', desc: 'The stricter "public" zone only allows what you choose.', st: (x) => (!x.firewall.active ? 'blocked' : 'todo') },
+  { id: 'autoupdate', icon: 'refresh', title: 'Automatic updates', action: 'setup-autoupdate', desc: 'Download new system versions in the background. They start after you restart.', st: (x) => (x.autoupdate ? 'done' : 'todo') },
+  { id: 'selinux', icon: 'check', title: 'SELinux', desc: 'Keeps apps and services inside their own boundaries.', st: (x) => (x.selinux === 'enforcing' ? 'done' : 'todo') },
 ];
 
 const DNS_CHOICES = [
@@ -478,10 +323,10 @@ const DNS_CHOICES = [
 function checkRow(item, setup) {
   const st = item.st(setup);
   const li = document.createElement('li');
-  li.className = `check-row ${st === 'done' || st === 'info-good' ? 'done' : st === 'restart' || st === 'info-warn' ? 'restart' : ''}`;
-  const ic = document.createElement('span');
-  ic.className = 'check-icon';
-  ic.innerHTML = icon(st === 'done' || st === 'info-good' ? 'check' : item.icon);
+  li.className = `check-row ${st === 'done' ? 'done' : st === 'restart' ? 'restart' : ''}`;
+  const iconSpan = document.createElement('span');
+  iconSpan.className = 'check-icon';
+  iconSpan.innerHTML = icon(st === 'done' ? 'check' : item.icon);
   const text = document.createElement('div');
   text.className = 'check-text';
   const t = document.createElement('div');
@@ -491,25 +336,28 @@ function checkRow(item, setup) {
   d.className = 'check-desc';
   d.textContent = item.desc;
   text.append(t, d);
-  li.append(ic, text);
+  li.append(iconSpan, text);
 
-  const pill = (txt, kind) => {
+  if (st === 'done') {
     const p = document.createElement('span');
-    p.className = `pill ${kind}`;
-    p.textContent = txt;
+    p.className = 'pill good';
+    p.textContent = 'Done';
     li.appendChild(p);
-  };
-  if (st === 'done') pill('Done', 'good');
-  else if (st === 'restart') pill('Restart to finish', 'warn');
-  else if (st === 'blocked') pill(item.note || 'Not available yet', '');
-  else if (st === 'info-good') pill(item.label(setup), 'good');
-  else if (st === 'info-warn') pill(item.label(setup), 'warn');
-  else {
+  } else if (st === 'restart') {
+    const p = document.createElement('span');
+    p.className = 'pill warn';
+    p.textContent = 'Restart to finish';
+    li.appendChild(p);
+  } else if (st === 'blocked') {
+    const p = document.createElement('span');
+    p.className = 'pill';
+    p.textContent = 'Not available yet';
+    li.appendChild(p);
+  } else {
     const b = document.createElement('button');
     b.className = 'btn small';
-    b.textContent = item.btn || 'Set up';
+    b.textContent = 'Set up';
     b.addEventListener('click', async () => {
-      if (item.confirm && !(await confirmDialog(item.confirm))) return;
       perform(item.action);
     });
     li.appendChild(b);
@@ -527,49 +375,21 @@ function renderSetup() {
   const x = state.setup;
   const host = $('#setup-list');
   host.innerHTML = '';
-  $('#btn-setup-all').innerHTML = `${icon('sparkle')}<span>Set up everything</span>`;
-  if (!x) {
-    $('#btn-setup-all').disabled = true;
-    return;
-  }
+  if (!x) return;
   for (const item of SETUP_ITEMS) host.appendChild(checkRow(item, x));
-
-  const states = SETUP_ITEMS.map((i) => i.st(x));
-  const done = states.filter((v) => v === 'done').length;
-  const todo = states.filter((v) => v === 'todo').length;
-  const waiting = states.some((v) => v === 'restart');
-  const blocked = states.some((v) => v === 'blocked');
-  const allDone = done === SETUP_ITEMS.length;
-
-  const hero = $('#setup-hero-icon');
-  hero.className = `hero-icon ${allDone ? 'good' : waiting ? 'warn' : ''}`;
-  hero.innerHTML = icon(allDone ? 'check' : waiting ? 'power' : 'sparkle');
-  $('#setup-title').textContent = allDone ? 'All set' : waiting && !todo ? 'Restart to continue' : 'Post-install setup';
-  $('#setup-sub').textContent = allDone
-    ? 'Everything recommended is already done.'
-    : waiting && !todo
-      ? 'Restart your computer, then come back to finish the remaining steps.'
-      : `${done} of ${SETUP_ITEMS.length} done. One click sets up the rest${blocked ? '; the codecs follow after a restart' : ''}.`;
-  $('#btn-setup-all').disabled = todo === 0;
 }
 
 function renderSecurity() {
   const x = state.setup;
   const host = $('#security-list');
   host.innerHTML = '';
-  const tiles = $('#dns-tiles');
-  tiles.innerHTML = '';
   if (!x) return;
   for (const item of SECURITY_ITEMS) host.appendChild(checkRow(item, x));
 
+  const tiles = $('#dns-tiles');
+  tiles.innerHTML = '';
   const cur = x.dns.current;
   const noConn = x.dns.connections.length === 0;
-  const labels = { none: 'No active Wi-Fi or Ethernet connection found.', mixed: 'Your connections use different DNS servers.', custom: 'Using custom DNS servers.' };
-  const choice = DNS_CHOICES.find((c) => c.id === cur);
-  $('#dns-note').textContent = choice
-    ? `Currently: ${choice.title}. DNS turns website names into addresses, so pick a provider you trust.`
-    : `${labels[cur] || ''} DNS turns website names into addresses, so pick a provider you trust.`.trim();
-
   for (const c of DNS_CHOICES) {
     const b = document.createElement('button');
     b.className = `tile${cur === c.id ? ' selected' : ''}`;
@@ -579,108 +399,45 @@ function renderSecurity() {
     $('.tile-desc', b).textContent = c.desc;
     b.addEventListener('click', async () => {
       if (cur === c.id) return;
-      const ok = await confirmDialog({
-        title: c.id === 'auto' ? 'Use the network’s DNS again?' : `Switch DNS to ${c.title}?`,
-        body: 'This applies to your active Wi-Fi and Ethernet connections. Your connection may drop for a second.',
-        ok: 'Switch',
-      });
+      const ok = await confirmDialog({ title: c.id === 'auto' ? 'Use the network’s DNS again?' : `Switch DNS to ${c.title}?`, body: 'This applies to your active Wi‑Fi and Ethernet connections. Your connection may drop for a second.', ok: 'Switch' });
       if (ok) perform(c.id === 'auto' ? 'dns-reset' : 'dns-set', c.id);
     });
     tiles.appendChild(b);
   }
 }
 
-function wireSetup() {
+async function wireSetup() {
   $('#btn-setup-all').addEventListener('click', async () => {
-    const ok = await confirmDialog({
-      title: 'Set up everything?',
-      body: 'This enables Flathub, adds Flatseal, turns on automatic updates and adds RPM Fusion. You may be asked for your password a few times. System changes finish after a restart; the codecs can be added once RPM Fusion is active.',
-      ok: 'Set up',
-    });
+    const ok = await confirmDialog({ title: 'Set up everything?', body: 'This enables Flathub, installs Flatseal, enables automatic updates and adds RPM Fusion.', ok: 'Set up' });
     if (ok) perform('postinstall-all');
   });
-
   $('#dns-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const err = $('#dns-error');
     const list = $('#dns-input').value.split(/[\s,]+/).filter(Boolean);
     const v4 = /^(\d{1,3}\.){3}\d{1,3}$/;
-    const v6 = /^[0-9a-fA-F:]+$/;
-    if (!list.length || list.length > 4 || !list.every((a) => (v4.test(a) && a.split('.').every((n) => Number(n) <= 255)) || (a.includes(':') && v6.test(a)))) {
-      err.textContent = 'Enter up to 4 valid IP addresses, like 1.1.1.1, 9.9.9.9';
-      err.classList.remove('hidden');
+    if (!list.length || list.length > 4 || !list.every((a) => v4.test(a) && a.split('.').every((n) => Number(n) <= 255))) {
+      $('#dns-error').textContent = 'Enter up to 4 valid IPv4 servers, like 1.1.1.1, 9.9.9.9';
+      $('#dns-error').classList.remove('hidden');
       return;
     }
-    err.classList.add('hidden');
-    const ok = await confirmDialog({ title: 'Use these DNS servers?', body: `${list.join(', ')} will be used on your active Wi-Fi and Ethernet connections.`, ok: 'Use them' });
+    $('#dns-error').classList.add('hidden');
+    const ok = await confirmDialog({ title: 'Use these DNS servers?', body: `${list.join(', ')} will be used on your active Wi‑Fi and Ethernet connections.`, ok: 'Use them' });
     if (!ok) return;
     $('#dns-input').value = '';
     perform('dns-set', `custom:${list.join(',')}`);
   });
 }
 
-
-/* ------------------------------------------------------------------ */
-/* app updates                                                         */
-/* ------------------------------------------------------------------ */
-
-const appUpdate = { info: null, dismissed: false };
-
-async function checkAppUpdate(manual) {
-  const note = $('#about-update');
-  if (manual) { note.textContent = 'Checking…'; $('#btn-check-app-update').disabled = true; }
-  let r;
-  try { r = await window.api.appUpdateCheck(); } catch (_) { r = { status: 'unavailable' }; }
-  appUpdate.info = r;
-  $('#btn-check-app-update').disabled = false;
-
-  if (r.status === 'available') {
-    note.textContent = `Version ${r.latest} is available.`;
-    if (!appUpdate.dismissed || manual) {
-      appUpdate.dismissed = false;
-      $('#banner-update-title').textContent = `Update available: version ${r.latest}`;
-      $('#banner-update-sub').textContent = r.canInstall ? 'Install it now. The app restarts by itself.' : 'Open the download page to get the new version.';
-      $('#btn-update-app').textContent = r.canInstall ? 'Update app' : 'Open download page';
-      $('#banner-update').classList.remove('hidden');
-    }
-  } else if (r.status === 'current') {
-    note.textContent = 'You have the newest version.';
-  } else {
-    note.textContent = manual ? "Couldn't check for updates right now. Try again later." : '';
-  }
-}
-
 function wireAppUpdate() {
   $('#banner-update-icon').innerHTML = icon('download');
-  window.api.appInfo().then((i) => { $('#about-version').textContent = `Atomic Helper ${i.version}`; }).catch(() => {});
-
-  $('#btn-check-app-update').addEventListener('click', () => checkAppUpdate(true));
-  $('#btn-update-later').addEventListener('click', () => {
-    appUpdate.dismissed = true;
-    $('#banner-update').classList.add('hidden');
+  $('#btn-check-app-update').addEventListener('click', () => {
+    $('#about-update').textContent = 'Checking…';
   });
+  $('#btn-update-later').addEventListener('click', () => $('#banner-update').classList.add('hidden'));
   $('#btn-update-app').addEventListener('click', async () => {
-    const btn = $('#btn-update-app');
-    const sub = $('#banner-update-sub');
-    btn.disabled = true;
-    $('#btn-update-later').disabled = true;
-    sub.textContent = 'Downloading…';
-    const off = window.api.onUpdateProgress((pct) => { if (pct != null) sub.textContent = `Downloading… ${pct}%`; });
-    let r;
-    try { r = await window.api.appUpdateInstall(); } catch (e) { r = { ok: false, message: String(e && e.message ? e.message : e) }; }
-    off();
-    if (r.ok && r.restarting) { sub.textContent = 'Installed. Restarting…'; return; }
-    btn.disabled = false;
-    $('#btn-update-later').disabled = false;
-    sub.textContent = r.ok ? 'The download page was opened in your browser.' : `Update failed: ${r.message}`;
+    $('#banner-update-sub').textContent = 'Automated update support is not enabled in this build.';
   });
-
-  setTimeout(() => checkAppUpdate(false), 2500);
 }
-
-/* ------------------------------------------------------------------ */
-/* wiring                                                              */
-/* ------------------------------------------------------------------ */
 
 function showView(name) {
   for (const t of $$('.tab')) t.classList.toggle('active', t.dataset.view === name);
@@ -702,22 +459,15 @@ function init() {
   $('#btn-check').addEventListener('click', () => perform('check'));
   $('#btn-banner-restart').addEventListener('click', () => perform('reboot'));
   $('#btn-sheet-restart').addEventListener('click', () => { $('#sheet').classList.add('hidden'); perform('reboot'); });
-
   $('#btn-cancel').addEventListener('click', () => { $('#btn-cancel').disabled = true; window.api.cancel(); });
-  $('#btn-close').addEventListener('click', () => {
-    $('#sheet').classList.add('hidden');
-    const fw = $('#btn-fw-install');
-    if (fw) fw.remove();
-  });
+  $('#btn-close').addEventListener('click', () => $('#sheet').classList.add('hidden'));
   $('#btn-toggle-log').addEventListener('click', () => {
     const hidden = $('#log').classList.toggle('hidden');
     $('#btn-toggle-log').textContent = hidden ? 'Show details' : 'Hide details';
   });
-
   $('#pkg-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    const input = $('#pkg-input');
-    const name = input.value.trim();
+    const name = $('#pkg-input').value.trim();
     const err = $('#pkg-error');
     if (!PKG_RE.test(name)) {
       err.textContent = 'Enter a single package name using letters, numbers and . _ + -';
@@ -725,13 +475,12 @@ function init() {
       return;
     }
     err.classList.add('hidden');
-    input.value = '';
+    $('#pkg-input').value = '';
     perform('install-pkg', name);
   });
 
   wireSetup();
   wireAppUpdate();
-
   window.api.onStart(({ title }) => { if (sheetLive) $('#sheet-title').textContent = title; });
   window.api.onStep(({ index, total, label }) => {
     if (!sheetLive) return;
@@ -741,7 +490,6 @@ function init() {
     bar.style.width = '';
   });
   window.api.onLog((t) => { if (sheetLive) appendLog(t); });
-
   refreshStatus();
 }
 
