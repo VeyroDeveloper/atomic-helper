@@ -2,6 +2,13 @@
 
 Notable changes to Atomic Helper are recorded here. Release assets and generated release notes are available on [GitHub Releases](https://github.com/VeyroDeveloper/atomic-helper/releases).
 
+## [0.3.6] - 2026-11-05
+
+- Added a safe-cleanup action for rpm-ostree metadata, unused Flatpak runtimes, and old journal entries.
+- Added support bundle export with system details, recent journal entries, failed services, and installed package names. Review the archive before sharing it because logs can contain personal information.
+- Added quick links to Fedora Silverblue documentation, Flathub, and RPM Fusion.
+- Added a system diagnostics summary for troubleshooting.
+
 ## [0.3.5] - 2026-11-04
 
 - Mini update to verify the in-app update flow end-to-end.
@@ -28,6 +35,7 @@ Notable changes to Atomic Helper are recorded here. Release assets and generated
 - Added the Electron desktop application for Fedora Atomic maintenance, setup, and security tasks.
 - Added GitHub Releases-based app update checks and AppImage update installation.
 
+[0.3.6]: https://github.com/VeyroDeveloper/atomic-helper/releases/tag/v0.3.6
 [0.3.5]: https://github.com/VeyroDeveloper/atomic-helper/releases/tag/v0.3.5
 [0.3.4]: https://github.com/VeyroDeveloper/atomic-helper/releases/tag/v0.3.4
 [0.3.2]: https://github.com/VeyroDeveloper/atomic-helper/releases/tag/v0.3.2
