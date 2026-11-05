@@ -4,7 +4,7 @@ Notable changes to Atomic Helper are recorded here. Release assets and generated
 
 ## [Unreleased]
 
-- Project development is paused until December 2026.
+- Project development is paused until December 2026. See [PROJECT_PAUSE.md](https://github.com/VeyroDeveloper/atomic-helper/blob/main/PROJECT_PAUSE.md) for more information.
 - The next scheduled update is expected to become available starting 1 December 2026.
 
 ## [0.3.7] - 2026-11-05
