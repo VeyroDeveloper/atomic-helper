@@ -43,6 +43,8 @@ const TILES = [
   { action: 'update-apps', icon: 'apps', title: 'Update apps', desc: 'Bring all your Flatpak apps to their newest versions.' },
   { action: 'firmware-check', icon: 'chip', title: 'Check firmware', desc: 'Look for BIOS and device firmware updates.' },
   { action: 'cleanup', icon: 'broom', title: 'Clean up', desc: 'Clear caches and unused app runtimes to free up space.' },
+  { action: 'safe-cleanup', icon: 'broom', title: 'Safe cleanup', desc: 'Remove stale cache and unused runtimes without deleting your user data.' },
+  { action: 'support-bundle', icon: 'terminal', title: 'Export support bundle', desc: 'Save a tar.gz report with system details for support or debugging.' },
   { action: 'open-fedora-docs', icon: 'docs', title: 'Fedora docs', desc: 'Open the official Fedora Atomic documentation.' },
   { action: 'open-flathub', icon: 'store', title: 'Flathub', desc: 'Browse the main source of Flatpak apps.' },
   { action: 'open-rpmfusion', icon: 'sparkle', title: 'RPM Fusion', desc: 'Open the multimedia and extra repo site.' },

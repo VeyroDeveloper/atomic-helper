@@ -155,6 +155,18 @@ const AUTOUPDATE_SCRIPT = [
 ].join('\n');
 const FFMPEG_SWAP = ['rpm-ostree', 'override', 'remove', 'libavcodec-free', 'libavdevice-free', 'libavfilter-free', 'libavformat-free', 'libavutil-free', 'libpostproc-free', 'libswresample-free', 'libswscale-free', '--install', 'ffmpeg'];
 
+const SAFE_CLEANUP = {
+  label: 'Cleaning cached data and unused runtimes',
+  cmd: ['bash', '-lc', 'rpm-ostree cleanup -m && flatpak uninstall --unused -y --noninteractive && journalctl --vacuum-time=3d || true'],
+};
+
+const SUPPORT_BUNDLE_SCRIPT = [
+  'set -e',
+  'out="${HOME:-/tmp}/atomic-helper-support-$(date +%Y%m%d-%H%M%S).tar.gz"',
+  'tmpdir=$(mktemp -d)',
+  '{ uname -a > "$tmpdir/uname.txt"; echo "---"; cat /etc/os-release > "$tmpdir/os-release.txt"; echo "---"; rpm-ostree status --json > "$tmpdir/rpm-ostree-status.json" || true; echo "---"; flatpak list --app --columns=application > "$tmpdir/flatpak-apps.txt" || true; echo "---"; systemctl --failed --no-pager > "$tmpdir/systemctl-failed.txt" || true; echo "---"; journalctl -b -n 200 --no-pager > "$tmpdir/journal-last-200.txt" || true; echo "---"; rpm -qa --queryformat "%{NAME} %{VERSION}-%{RELEASE}\\n" | sort > "$tmpdir/packages.txt" || true; tar -czf "$out" -C "$tmpdir" .; echo "$out"; } 2>/dev/null',
+].join('\n');
+
 function rpmFusionCmd() {
   const v = readOsRelease().VERSION_ID;
   if (!/^\d+$/.test(v || '')) return null;
@@ -280,6 +292,8 @@ async function buildAction(action, arg) {
       return { title: 'Rolling back', steps: [{ label: 'Selecting the previous system version', cmd: ['rpm-ostree', 'rollback'] }] };
     case 'cleanup':
       return { title: 'Cleaning up', steps: [{ label: 'Clearing cached system data', cmd: ['rpm-ostree', 'cleanup', '--base', '--repomd'] }, { label: 'Removing unused app runtimes', cmd: ['flatpak', 'uninstall', '--unused', '-y', '--noninteractive'] }] };
+    case 'safe-cleanup':
+      return { title: 'Running safe cleanup', steps: [SAFE_CLEANUP] };
     case 'add-flathub':
       return { title: 'Enabling Flathub', steps: [{ label: 'Adding the Flathub source', cmd: ['flatpak', 'remote-add', '--if-not-exists', 'flathub', 'https://dl.flathub.org/repo/flathub.flatpakrepo'] }] };
     case 'install-pkg':
@@ -335,6 +349,8 @@ async function buildAction(action, arg) {
         onData(lines.join('\n') + '\n');
         return { code: 0, out: lines.join('\n') + '\n' };
       } }] };
+    case 'support-bundle':
+      return { title: 'Exporting support bundle', steps: [{ label: 'Collecting troubleshooting data', cmd: ['bash', '-lc', SUPPORT_BUNDLE_SCRIPT] }] };
     case 'firewall-on':
       return { title: 'Turning on the firewall', steps: [{ label: 'Starting the firewall', cmd: ['systemctl', 'enable', '--now', 'firewalld'] }] };
     case 'firewall-strict':
@@ -382,6 +398,8 @@ function summarize(action, steps, wasCancelled) {
       return done('Rollback ready: restart to go back', 'Your previous system version will start after you restart.');
     case 'cleanup':
       return done('All cleaned up', 'Old caches and unused app runtimes were removed.');
+    case 'safe-cleanup':
+      return done('Safe cleanup finished', 'Cached data and unused runtimes were cleaned up.');
     case 'add-flathub':
       return done('Flathub is enabled', 'You can now install apps from Flathub.');
     case 'install-pkg':
@@ -406,6 +424,10 @@ function summarize(action, steps, wasCancelled) {
       return done('RPM Fusion opened', 'The RPM Fusion site is open in your browser.');
     case 'system-diagnostics':
       return done('Diagnostics ready', 'Your system report was collected successfully.');
+    case 'support-bundle': {
+      const match = out.match(/\/[^\s]+\.tar\.gz/);
+      return done('Support bundle created', match ? `Saved to ${match[0]}` : 'A support bundle was created in your home directory.');
+    }
     case 'firewall-on':
       return done('Firewall is on', 'Your computer now blocks unwanted incoming connections.');
     case 'firewall-strict':
