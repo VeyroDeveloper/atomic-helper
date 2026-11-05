@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('api', {
   appInfo: () => ipcRenderer.invoke('app-info'),
   appUpdateCheck: () => ipcRenderer.invoke('app-update-check'),
   appUpdateInstall: () => ipcRenderer.invoke('app-update-install'),
+  openUrl: (url) => ipcRenderer.invoke('open-url', url),
   onUpdateProgress: listen('app-update-progress'),
   onStart: listen('start'),
   onStep: listen('step'),
